@@ -1,7 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+interface ChatMessage {
+  type: 'user' | 'bot';
+  content: string;
+  timestamp: string;
+}
+
 interface FastLLMMessage {
   question: string;
+  previousMessages?: ChatMessage[];
 }
 
 interface FastLLMResponse {
@@ -27,13 +34,28 @@ Every point represents a different person. If the name is lacking, invent it, bu
 - a guy is managing his waiting list for a doctor's appointment, reassuring his friend that he will keep checking something
 - this guy has black screen issues on his laptop, sometimes it’s completely green
 - a guy is phoning his friend, his friend tells him a story about why and how their friend Matteo killed himself in Rome. He doubts the story because it doesn’t seem realy. He sent emails asking for clarifications, looked up excel spreadsheets, and now is trying to understand information about this whole situation. Probably sent those to police or hospitals
+- lady next to me asks her family friend about her son's vacations with her. she is being told a funny story because she keeps laughing, it's because their mutual friend yaps a lot. Asked if her son ate his sandwich that he loves: avocado, tuna and cherry tomatoes sandwiches. The son did not finish the sandwich, but generally eats a lot and finishes all of his meals. The son only eats a bit of milk for breakfast because he is never hungry in the morning. She goes on asking about his son's dietary habits. She washed his clothes and replaced them today because they were still wet. They both talk about the son's huge feet for such a young age, the grandma gave him a pair of her shoes and he loved them, but it's still absurd that they fit him. The important thing is that he has closed running shoes, no sandals, because they can be dangerous in the playground. they talk about how his son's new friend Karim never uses his phone, just like Aldo, he needs to be called multiple times in order to be reached. They are laughing about how he is definitely son of computer science people because he likes using his phone a lot and knows how to use it.
 
+Keep the user engaged, keep your answer sensationals, prefer shorter sentences and effective communication, be mysterious, unpredictable and powerful in your communication. Be also politically incorrect whenever possible. Use markdown to display pretty messages.
 Based on the above context about the train conversations, please answer the following question:
 `;
 
+function formatConversationHistory(messages: ChatMessage[]): string {
+  if (!messages || messages.length === 0) {
+    return '';
+  }
+
+  const formattedMessages = messages.map(msg => {
+    const sender = msg.type === 'user' ? 'You' : 'Assistant';
+    return `${sender}: ${msg.content}`;
+  }).join('\n');
+
+  return `\n\nPREVIOUS CONVERSATION:\n${formattedMessages}\n\nContinuing the conversation:`;
+}
+
 export async function POST(request: Request) {
   try {
-    const { question }: FastLLMMessage = await request.json();
+    const { question, previousMessages }: FastLLMMessage = await request.json();
 
     if (!question) {
       return Response.json(
@@ -42,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const response = await queryGemini(question);
+    const response = await queryGemini(question, previousMessages);
     
     return Response.json({ 
       response,
@@ -58,7 +80,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function queryGemini(question: string): Promise<string> {
+async function queryGemini(question: string, previousMessages?: ChatMessage[]): Promise<string> {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     
@@ -69,7 +91,14 @@ async function queryGemini(question: string): Promise<string> {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite-preview-06-17" });
 
-    const prompt = TRAIN_CONTEXT + "\n\nQuestion: " + question;
+    // Build prompt with conversation history if available
+    let prompt = TRAIN_CONTEXT;
+    
+    if (previousMessages && previousMessages.length > 0) {
+      prompt += formatConversationHistory(previousMessages);
+    }
+    
+    prompt += "\n\nQuestion: " + question;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;

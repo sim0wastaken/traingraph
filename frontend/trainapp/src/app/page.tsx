@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github.css';
 
 interface Message {
   id: string;
@@ -19,10 +23,11 @@ const knowledgeGraphPrompts = [
 
 const fastLLMPrompts = [
   "Summarize the most interesting conversations on this train",
-  "What can you tell me about the passengers' personalities?",
+  "What can you tell me about the passengers' personalities?", 
   "Create a short story based on the train conversations",
   "What themes emerge from the overheard discussions?",
-  "Analyze the social dynamics on this train"
+  "Analyze the social dynamics on this train",
+  "Tell me more about Bart's views on Italian cities"
 ];
 
 const TrainIcon = () => (
@@ -37,12 +42,140 @@ const SendIcon = () => (
   </svg>
 );
 
+// Custom Markdown Component with styled elements
+const MarkdownMessage = ({ children, isUser }: { children: string; isUser: boolean }) => {
+  const customComponents = {
+    // Headings
+    h1: ({ children }: any) => <h1 className="text-xl font-bold mb-3 text-slate-800">{children}</h1>,
+    h2: ({ children }: any) => <h2 className="text-lg font-bold mb-2 text-slate-800">{children}</h2>,
+    h3: ({ children }: any) => <h3 className="text-base font-semibold mb-2 text-slate-700">{children}</h3>,
+    
+    // Paragraphs
+    p: ({ children }: any) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+    
+    // Lists
+    ul: ({ children }: any) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
+    ol: ({ children }: any) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
+    li: ({ children }: any) => <li className="text-sm leading-relaxed">{children}</li>,
+    
+    // Code blocks
+    code: ({ inline, className, children, ...props }: any) => {
+      if (inline) {
+        return (
+          <code 
+            className={`px-1.5 py-0.5 rounded text-xs font-mono ${
+              isUser 
+                ? 'bg-white/20 text-blue-100' 
+                : 'bg-slate-100 text-slate-800'
+            }`} 
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+      return (
+        <div className="my-3">
+          <pre className={`p-3 rounded-lg text-xs font-mono overflow-x-auto ${
+            isUser 
+              ? 'bg-white/10 text-blue-50' 
+              : 'bg-slate-50 text-slate-800 border border-slate-200'
+          }`}>
+            <code className={className} {...props}>
+              {children}
+            </code>
+          </pre>
+        </div>
+      );
+    },
+    
+    // Blockquotes
+    blockquote: ({ children }: any) => (
+      <blockquote className={`border-l-4 pl-4 my-3 italic ${
+        isUser 
+          ? 'border-white/40 text-blue-100' 
+          : 'border-blue-300 text-slate-600'
+      }`}>
+        {children}
+      </blockquote>
+    ),
+    
+    // Tables
+    table: ({ children }: any) => (
+      <div className="my-3 overflow-x-auto">
+        <table className={`min-w-full text-xs border-collapse ${
+          isUser 
+            ? 'border border-white/20' 
+            : 'border border-slate-200'
+        }`}>
+          {children}
+        </table>
+      </div>
+    ),
+    th: ({ children }: any) => (
+      <th className={`border px-3 py-2 text-left font-semibold ${
+        isUser 
+          ? 'border-white/20 bg-white/10' 
+          : 'border-slate-200 bg-slate-50'
+      }`}>
+        {children}
+      </th>
+    ),
+    td: ({ children }: any) => (
+      <td className={`border px-3 py-2 ${
+        isUser 
+          ? 'border-white/20' 
+          : 'border-slate-200'
+      }`}>
+        {children}
+      </td>
+    ),
+    
+    // Links
+    a: ({ children, href, ...props }: any) => (
+      <a 
+        href={href} 
+        className={`underline hover:no-underline ${
+          isUser 
+            ? 'text-blue-200 hover:text-white' 
+            : 'text-blue-600 hover:text-blue-800'
+        }`}
+        target="_blank"
+        rel="noopener noreferrer"
+        {...props}
+      >
+        {children}
+      </a>
+    ),
+    
+    // Strong/Bold
+    strong: ({ children }: any) => <strong className="font-semibold">{children}</strong>,
+    
+    // Emphasis/Italic
+    em: ({ children }: any) => <em className="italic">{children}</em>,
+    
+    // Horizontal rule
+    hr: () => <hr className={`my-4 ${isUser ? 'border-white/20' : 'border-slate-200'}`} />,
+  };
+
+  return (
+    <ReactMarkdown
+      components={customComponents}
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeHighlight]}
+    >
+      {children}
+    </ReactMarkdown>
+  );
+};
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [mode, setMode] = useState<'knowledge-graph' | 'fastllm'>('fastllm');
+  const [showExamples, setShowExamples] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -73,12 +206,24 @@ export default function Home() {
     try {
       const endpoint = mode === 'knowledge-graph' ? '/api/chat' : '/api/fastllm';
       
+      // Prepare request body based on mode
+      const requestBody = mode === 'knowledge-graph' 
+        ? { question: message }
+        : { 
+            question: message,
+            previousMessages: messages.map(msg => ({
+              type: msg.type,
+              content: msg.content,
+              timestamp: msg.timestamp.toISOString()
+            }))
+          };
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ question: message }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -120,6 +265,7 @@ export default function Home() {
   };
 
   const handleExampleClick = (prompt: string) => {
+    setShowExamples(false);
     sendMessage(prompt);
   };
 
@@ -178,10 +324,17 @@ export default function Home() {
             </div>
 
             {/* CTA */}
-            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover-lift interactive-element animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
+            <button 
+              onClick={() => {
+                inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => inputRef.current?.focus(), 500);
+              }}
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover-lift interactive-element animate-fade-in-up cursor-pointer transition-transform hover:scale-105" 
+              style={{ animationDelay: '0.6s' }}
+            >
               <span>Ask me anything about this chaotic journey!</span>
               <div className="w-2 h-2 bg-white rounded-full animate-pulse-slow"></div>
-            </div>
+            </button>
           </div>
 
           {/* Chat Interface */}
@@ -196,7 +349,14 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">The Southern Italy Vibes Train (We love it!)</h3>
-                      <p className="text-blue-100 text-sm">Powered by overheard conversations</p>
+                      <p className="text-blue-100 text-sm">
+                        Powered by overheard conversations
+                        {mode === 'fastllm' && messages.length > 0 && (
+                          <span className="ml-2 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                            💭 Memory Active
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-6">
@@ -242,16 +402,37 @@ export default function Home() {
 
               {/* Messages Area */}
               <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-slate-50/50 to-white/50 custom-scrollbar">
-                {messages.length === 0 && (
-                  <div className="text-center py-12 animate-fade-in-up">
+                {/* Example Prompts */}
+                {(messages.length === 0 || showExamples) && (
+                  <div className={`text-center animate-fade-in-up relative transition-all duration-300 ${
+                    showExamples && messages.length > 0 
+                      ? 'glass-effect rounded-3xl mx-4 my-4 border-2 border-blue-200 shadow-xl z-10' 
+                      : ''
+                  }`}>
+                    {/* Close button for when examples are toggled after conversation started */}
+                    {showExamples && messages.length > 0 && (
+                      <button
+                        onClick={() => setShowExamples(false)}
+                        className="absolute top-4 right-4 w-8 h-8 bg-white/80 hover:bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover-lift interactive-element shadow-sm"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                    
                     <div className="mb-8">
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4 hover-lift interactive-element">
                         <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                         </svg>
                       </div>
-                      <h4 className="text-lg font-semibold text-slate-800 mb-2">Ready to explore the train conversations?</h4>
-                      <p className="text-slate-600 mb-6">Try one of these conversation starters:</p>
+                      <h4 className="text-lg font-semibold text-slate-800 mb-2">
+                        {messages.length === 0 ? 'Ready to explore the train conversations?' : 'Try these conversation ideas:'}
+                      </h4>
+                      <p className="text-slate-600 mb-6">
+                        {messages.length === 0 ? 'Try one of these conversation starters:' : 'Click any prompt to continue the conversation:'}
+                      </p>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
@@ -297,10 +478,12 @@ export default function Home() {
                       {/* Message Bubble */}
                       <div className={`rounded-2xl px-4 py-3 message-bubble ${
                         message.type === 'user'
-                          ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white'
-                          : 'bg-white border border-slate-200 text-slate-800 shadow-sm'
+                          ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white user-message'
+                          : 'bg-white border border-slate-200 text-slate-800 shadow-sm bot-message'
                       }`}>
-                        <p className="whitespace-pre-wrap leading-relaxed mobile-text">{message.content}</p>
+                        <div className="mobile-text markdown-content">
+                          <MarkdownMessage isUser={message.type === 'user'}>{message.content}</MarkdownMessage>
+                        </div>
                         <p className={`text-xs mt-2 ${
                           message.type === 'user' ? 'text-blue-200' : 'text-slate-500'
                         }`}>
@@ -333,6 +516,30 @@ export default function Home() {
 
               {/* Input Area */}
               <div className="border-t border-slate-200 p-6 bg-white/50 backdrop-blur-sm">
+                {/* Example Prompts Toggle */}
+                {messages.length > 0 && (
+                  <div className="mb-4 flex justify-center">
+                    <button
+                      onClick={() => {
+                        setShowExamples(!showExamples);
+                        if (!showExamples) {
+                          // Scroll to top of chat area to show examples
+                          setTimeout(() => {
+                            const chatArea = document.querySelector('.custom-scrollbar');
+                            chatArea?.scrollTo({ top: 0, behavior: 'smooth' });
+                          }, 100);
+                        }
+                      }}
+                      className="inline-flex items-center space-x-2 bg-white/80 hover:bg-white border border-slate-200 hover:border-blue-300 text-slate-700 hover:text-blue-600 px-4 py-2 rounded-full text-sm font-medium hover-lift interactive-element transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span>{showExamples ? 'Hide' : 'Show'} Example Prompts</span>
+                    </button>
+                  </div>
+                )}
+                
                 <form onSubmit={handleSubmit} className="flex space-x-4">
                   <div className="flex-1 relative">
                     <input
