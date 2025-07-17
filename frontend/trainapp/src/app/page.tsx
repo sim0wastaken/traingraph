@@ -9,12 +9,20 @@ interface Message {
   timestamp: Date;
 }
 
-const examplePrompts = [
+const knowledgeGraphPrompts = [
   "What the hell is happening on this train?",
   "Tell me a curious fact about this train",
   "What are people talking about?",
   "Who is Bart and what does he think about cities?",
   "What's the deal with the AC on this train?"
+];
+
+const fastLLMPrompts = [
+  "Summarize the most interesting conversations on this train",
+  "What can you tell me about the passengers' personalities?",
+  "Create a short story based on the train conversations",
+  "What themes emerge from the overheard discussions?",
+  "Analyze the social dynamics on this train"
 ];
 
 const TrainIcon = () => (
@@ -34,6 +42,7 @@ export default function Home() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [mode, setMode] = useState<'knowledge-graph' | 'fastllm'>('knowledge-graph');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -62,7 +71,9 @@ export default function Home() {
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      const endpoint = mode === 'knowledge-graph' ? '/api/chat' : '/api/fastllm';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -160,8 +171,8 @@ export default function Home() {
                   <div className="text-sm text-slate-600 font-medium">Loudness Level</div>
                 </div>
                 <div className="text-center interactive-element">
-                  <div className="text-3xl font-bold text-indigo-600 mb-1">1</div>
-                  <div className="text-sm text-slate-600 font-medium">Knowledge Graph</div>
+                  <div className="text-3xl font-bold text-indigo-600 mb-1">2</div>
+                  <div className="text-sm text-slate-600 font-medium">Knowledge Bases</div>
                 </div>
               </div>
             </div>
@@ -184,13 +195,47 @@ export default function Home() {
                       <div className="w-6 h-6 bg-white rounded-full animate-pulse-slow"></div>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold">Train Knowledge Assistant</h3>
+                      <h3 className="text-xl font-bold">The Southern Italy Vibes Train (We love it!)</h3>
                       <p className="text-blue-100 text-sm">Powered by overheard conversations</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-blue-100">Live from</div>
-                    <div className="text-sm font-semibold">Car 7, Seat 23A</div>
+                  <div className="flex items-center space-x-6">
+                    {/* Mode Toggle */}
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right text-xs">
+                        <div className="text-blue-100">Mode</div>
+                        <div className="font-semibold">
+                          {mode === 'knowledge-graph' ? 'Knowledge Graph' : 'FastLLM'}
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          id="mode-toggle"
+                          checked={mode === 'fastllm'}
+                          onChange={(e) => setMode(e.target.checked ? 'fastllm' : 'knowledge-graph')}
+                          className="sr-only"
+                        />
+                        <label
+                          htmlFor="mode-toggle"
+                          className="block w-14 h-8 bg-white/20 rounded-full cursor-pointer relative transition-colors hover:bg-white/30"
+                        >
+                          <div
+                            className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full transition-transform ${
+                              mode === 'fastllm' ? 'translate-x-6' : 'translate-x-0'
+                            }`}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-between px-2 text-xs font-medium">
+                            <span className={mode === 'knowledge-graph' ? 'text-white' : 'text-white/50'}>KG</span>
+                            <span className={mode === 'fastllm' ? 'text-white' : 'text-white/50'}>AI</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-blue-100">Live from</div>
+                      <div className="text-sm font-semibold">Car 8, Seat 31</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -210,7 +255,7 @@ export default function Home() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                      {examplePrompts.map((prompt, index) => (
+                      {(mode === 'knowledge-graph' ? knowledgeGraphPrompts : fastLLMPrompts).map((prompt, index) => (
                         <button
                           key={index}
                           onClick={() => handleExampleClick(prompt)}
