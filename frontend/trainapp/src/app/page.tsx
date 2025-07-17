@@ -22,11 +22,11 @@ const knowledgeGraphPrompts = [
 ];
 
 const fastLLMPrompts = [
-  "Summarize the most interesting conversations on this train",
+  "Wtf are people yapping about?",
+  "Analyze the social dynamics on this train",
   "What can you tell me about the passengers' personalities?", 
   "Create a short story based on the train conversations",
   "What themes emerge from the overheard discussions?",
-  "Analyze the social dynamics on this train",
   "Tell me more about Bart's views on Italian cities"
 ];
 
