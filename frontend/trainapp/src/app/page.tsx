@@ -42,7 +42,7 @@ export default function Home() {
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [mode, setMode] = useState<'knowledge-graph' | 'fastllm'>('knowledge-graph');
+  const [mode, setMode] = useState<'knowledge-graph' | 'fastllm'>('fastllm');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
