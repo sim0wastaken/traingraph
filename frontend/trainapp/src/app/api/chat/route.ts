@@ -46,7 +46,7 @@ async function queryGraphRAG(question: string): Promise<string> {
       },
       body: JSON.stringify({
         question: question,
-        method: 'local'
+        method: 'global'
       }),
     });
 
