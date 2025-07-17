@@ -1,0 +1,55 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# by gcloud. It follows the same syntax as .gitignore
+
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# Build artifacts
+.dockerignore
+Dockerfile.dev
+
+# Large cache directories (keep processed outputs)
+# cache/
+logs/
+
+# Railway specific files
+railway.json
+
+# Development scripts
+scripts/ 
