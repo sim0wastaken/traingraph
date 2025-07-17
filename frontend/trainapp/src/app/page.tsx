@@ -302,7 +302,7 @@ export default function Home() {
             <p className="text-xl md:text-2xl text-slate-700 max-w-4xl mx-auto mb-8 leading-relaxed font-light animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               Welcome aboard the chaotic <span className="font-semibold text-blue-700">Torino-Salerno express</span>! 
               When the journey got <em className="text-purple-600 not-italic font-medium">really</em> loud, 
-              Simone did what any reasonable person would do: turned overheard conversations into an AI knowledge graph.
+              I did what any reasonable person would do: turned overheard conversations into an AI knowledge graph.
             </p>
 
             {/* Stats Card */}
@@ -332,7 +332,7 @@ export default function Home() {
               className="inline-flex items-center space-x-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl hover-lift interactive-element animate-fade-in-up cursor-pointer transition-transform hover:scale-105" 
               style={{ animationDelay: '0.6s' }}
             >
-              <span>Ask me anything about this chaotic journey!</span>
+              <span>Ask me anything about this yapping journey!</span>
               <div className="w-2 h-2 bg-white rounded-full animate-pulse-slow"></div>
             </button>
           </div>
@@ -547,7 +547,7 @@ export default function Home() {
                       type="text"
                       value={currentMessage}
                       onChange={(e) => setCurrentMessage(e.target.value)}
-                      placeholder="Ask about the train conversations..."
+                      placeholder="Ask about this experience..."
                       className="w-full border border-slate-300 rounded-2xl px-6 py-4 focus-ring bg-white/70 backdrop-blur-sm placeholder-slate-500 text-slate-800 mobile-text"
                       disabled={isLoading}
                     />
