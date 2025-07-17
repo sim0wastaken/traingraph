@@ -571,7 +571,7 @@ export default function Home() {
             <div className="inline-flex items-center space-x-2 text-slate-600">
               <span className="text-sm">Made with</span>
               <span className="text-red-500 animate-pulse-slow">❤️</span>
-              <span className="text-sm">by someone who just wanted a quiet ride to Rome</span>
+              <span className="text-sm">and too much caffeine by someone who should have been studying</span>
             </div>
           </div>
         </div>
