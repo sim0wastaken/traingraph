@@ -418,3 +418,5 @@
 2025-07-17 16:23:02.0658 - INFO - graphrag.api.index - Workflow generate_text_embeddings completed successfully
 2025-07-17 16:23:02.0677 - INFO - graphrag.index.run.run_pipeline - Indexing pipeline complete.
 2025-07-17 16:23:02.0680 - INFO - graphrag.cli.index - All workflows completed successfully.
+2025-07-17 17:24:23.0444 - INFO - graphrag.cli.query - Local Search Response:
+Based on the information provided in the sources, the names of people on the train include Simone and Bart, who are engaged in a conversation about various cities, including their opinions on Milan, Rome, and Turin. Simone is a local from Turin and prefers it over Milan, while Bart, from Lecco, shares his views on Rome's livability and the potential of Valtellina. Other names mentioned in the context of different conversations or activities on the train include Lorenzo and Leonardo, who were invited to a meetup, and Matteo, who is mentioned in a story told by a friend on the phone. These names represent a snapshot of the diverse discussions and interactions occurring during the train ride from Torino Porta Susa to Roma Termini [Data: Sources (0)].

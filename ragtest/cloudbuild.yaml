@@ -1,11 +1,11 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/simone-train-graphrag:$COMMIT_SHA', '.']
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/simone-train-graphrag:latest', '.']
     
   # Push the image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/simone-train-graphrag:$COMMIT_SHA']
+    args: ['push', 'gcr.io/$PROJECT_ID/simone-train-graphrag:latest']
     
   # Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -14,9 +14,9 @@ steps:
       - 'deploy'
       - 'simone-train-graphrag'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/simone-train-graphrag:$COMMIT_SHA'
+      - 'gcr.io/$PROJECT_ID/simone-train-graphrag:latest'
       - '--region'
-      - 'us-central1'
+      - 'europe-west6'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
@@ -36,7 +36,7 @@ steps:
       - 'GRAPHRAG_API_KEY=graphrag-openai-key:latest'
 
 images:
-  - 'gcr.io/$PROJECT_ID/simone-train-graphrag:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/simone-train-graphrag:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
