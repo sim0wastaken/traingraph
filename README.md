@@ -7,6 +7,8 @@ I wanted to study for an exam, but I was too tired. Us Italians love talking lou
 
 So I did whatever any reasonable person would do: I built a knowledge graph out of this and made a chat app so that people can experience a glimpse of what I have gone through, because let's be real, I am not going to remember it.
 
+It was made in a 4hrs train ride, I had a lot of fun.
+
 ## 🛠️ Tech Stack
 
 ### Frontend & Backend
